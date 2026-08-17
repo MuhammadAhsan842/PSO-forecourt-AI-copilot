@@ -1,0 +1,36 @@
+# Per-camera named presets. Values are placeholders and MUST be captured on-site
+# in Milestone 3 via the `pso-probe` script (--save-preset). Focus/exposure are stored
+# so the recall can verify the view arrived crisp.
+#
+# The `exposure_ms` / `iris` / `gain_db` values apply when Auto Exposure is off.
+# `zoom` is 0.0..1.0 normalized (mapped to the camera's actual zoom range on set).
+
+presets:
+  ptz1:
+    overview:
+      description: "Wide view of pumps A/B, entry lane"
+      pan: 0.0
+      tilt: 0.0
+      zoom: 0.0
+      focus: auto
+      exposure:
+        mode: auto
+    pump_a_meter:
+      description: "Tight crop on Pump A dispenser display"
+      pan: -12.5
+      tilt: -8.0
+      zoom: 0.72
+      focus: 0.68            # locked, tuned for meter
+      exposure:
+        mode: manual
+        shutter_ms: 4        # short shutter tames glary 7-seg display
+        gain_db: 6
+        wdr: on
+    pump_a_plate_exit:
+      description: "Motorbike plate at exit of Pump A"
+      pan: -8.0
+      tilt: -18.0
+      zoom: 0.55
+      focus: 0.55
+      exposure:
+        mode: auto

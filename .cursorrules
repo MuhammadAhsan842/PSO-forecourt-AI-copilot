@@ -1,0 +1,49 @@
+# .cursorrules — PSO Forecourt AI Surveillance (Pilot)
+#
+# Client: PSO Pump — 295-A, Airlines Society, Lahore · Vendor: M. Resolutions
+# 1.5-month pilot on the client's EXISTING Dahua PTZ (8MP/4K) cameras. No new hardware.
+#
+# THE ONE RULE:
+#   Get a CLEAR, READABLE image first — then build AI on top of it.
+#   Sequence, strictly:
+#     clear image → repeatable clear image → understand the scene → capture the right moments →
+#     read them → connect them → prove it.
+#
+# GATES (execute in strict order, do not build ahead):
+#   M0  Scaffold & rails                                  — runnable skeleton + /health + tests.
+#   M1  Camera-control probe                              — capability matrix per camera model. GATE.
+#   M2  Blur-free, human-verified capture                 — human can read meter + plate on stills. GATE.
+#   M3  Repeatable sharp presets                          — presets return the same crisp view.
+#   M4  RTSP ingest & baseline (reliability)              — reconnect on drop; day+night baseline.
+#   M5  Detection & tracking                              — YOLO + ByteTrack, stable IDs, offline replay.
+#   M6  Operational core (early wins)                     — zones/lines/dwell, after-hours, queue.
+#   M7  Backend, storage & live dashboard                 — the screen staff use, true/false feedback.
+#   M8  Choreographed capture sequencer                   — trigger → meter → plate → people (best-effort).
+#   M9  Meter reading                                     — sale detected + amount, litres×rate self-check.
+#   M10 Plate reading & sale↔vehicle link                 — the payoff: attribution + drive-off with amount.
+#   M11 Prove, tune & pilot report                        — before/after review with real numbers.
+#
+# HOW THE AGENT WORKS:
+# - ONE milestone at a time. Finish → test → demo → commit → next.
+# - Every task ends with a test AND a runnable demo. No "trust me".
+# - Keep it runnable OFFLINE on saved clips (`scripts/replay_clip.py`).
+# - If blocked by missing input (RTSP URL, creds, GPU, real clip), STOP and ASK.
+# - RESPECT THE GATES: no meter/plate OCR (M9-M10) until M1-M3 prove a human-readable capture.
+# - Commit per milestone with the milestone number in the message (e.g. "M4: RTSP ingest + reconnect").
+# - Update this file when an architectural decision changes.
+#
+# CODING STANDARDS:
+# - Type hints everywhere; `ruff` + `mypy` clean; format with `ruff format`.
+# - Small, single-responsibility modules; no 500-line files.
+# - ALL tunables in `config/` — never hard-coded.
+# - Every module ships tests.
+# - Structured logging (camera id + track id + event on every alert); never print().
+# - Graceful failure: dead camera logs + retries, never crashes the pipeline.
+# - Secrets only via .env/environment. Dashboard: no browser localStorage/sessionStorage.
+#
+# STACK:
+# - Python 3.11+, FastAPI, Ultralytics YOLO (v11), ByteTrack, Shapely, OpenCV/FFmpeg,
+#   ONVIF (onvif-zeep) + Dahua HTTP API, SQLite (WAL), pydantic-settings, loguru,
+#   React + Vite + TS + Tailwind, docker-compose, ONNX/TensorRT for deploy.
+#
+# See ROADMAP.md and each `src/<module>/README-ish docstring` for details.

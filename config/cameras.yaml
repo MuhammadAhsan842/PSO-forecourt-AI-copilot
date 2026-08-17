@@ -1,0 +1,36 @@
+# Camera roster. Real credentials/URLs come from environment variables named here
+# (see .env.example). Never put credentials in this file.
+#
+# role: overview | wide | ptz | fixed_meter | fixed_plate
+# is_ptz: whether the camera supports pan/tilt/zoom (drives capture sequencer)
+# fps: analytics FPS (5-10 recommended, per compute budget)
+
+cameras:
+  - id: ptz1
+    name: "Forecourt PTZ #1"
+    role: ptz
+    is_ptz: true
+    fps: 8
+    rtsp_env: CAM_PTZ1_RTSP
+    host_env: CAM_PTZ1_HOST
+    onvif_port_env: CAM_PTZ1_ONVIF_PORT
+    user_env: CAM_PTZ1_USER
+    pass_env: CAM_PTZ1_PASS
+    model_hint: "Dahua PTZ (8MP)"
+    presets:
+      overview: overview
+      meter: pump_a_meter
+      plate_out: pump_a_plate_exit
+
+  - id: wide1
+    name: "Forecourt Wide #1"
+    role: wide
+    is_ptz: false
+    fps: 8
+    rtsp_env: CAM_WIDE1_RTSP
+    host_env: CAM_WIDE1_HOST
+    onvif_port_env: CAM_WIDE1_ONVIF_PORT
+    user_env: CAM_WIDE1_USER
+    pass_env: CAM_WIDE1_PASS
+    model_hint: "Dahua fixed (8MP)"
+    presets: {}

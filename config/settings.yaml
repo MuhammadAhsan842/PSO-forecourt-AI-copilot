@@ -1,0 +1,80 @@
+# Global tunables. Anything a technician might want to change on-site lives here.
+# Everything reads through pydantic-settings; env vars in .env override these where noted.
+
+app:
+  name: "PSO Forecourt AI Surveillance"
+  version: "0.1.0"
+
+logging:
+  level: INFO          # DEBUG | INFO | WARNING | ERROR
+  json: true           # structured logs
+
+inference:
+  yolo_weights: "./models/yolo11n.pt"
+  device: auto         # cpu | cuda | auto (env PSO_DEVICE wins)
+  fps: 8
+  conf_threshold: 0.35
+  iou_threshold: 0.5
+  classes:
+    vehicle: [1, 2, 3, 5, 7]     # coco: bicycle, car, motorcycle, bus, truck
+    person: [0]
+
+tracking:
+  algorithm: bytetrack
+  track_high_thresh: 0.5
+  track_low_thresh: 0.1
+  match_thresh: 0.8
+  min_hits: 3
+  max_age_seconds: 5
+
+events:
+  enabled_rules:
+    - after_hours_presence
+    - queue_dwell
+    - restricted_entry
+    - loitering
+    - vehicle_settled_at_pump
+  cooldown_seconds:
+    after_hours_presence: 60
+    queue_dwell: 120
+    restricted_entry: 30
+    loitering: 60
+    vehicle_settled_at_pump: 10
+  loitering_seconds: 90
+
+capture:
+  # Priority order enforced by the sequencer when the single PTZ can't grab all stages in time
+  priority: ["meter", "plate", "occupant"]
+  meter_still_count: 12         # frames voted across for digit reads
+  plate_still_count: 8
+  preset_settle_seconds: 1.2
+  focus_confirm_min_sharpness: 80.0    # Laplacian variance threshold
+
+ocr:
+  meter:
+    reset_epsilon: 0.02          # display reads ~0 -> reset detected
+    settle_seconds: 2.0
+    arithmetic_tolerance: 0.02   # |amount - litres*rate| / amount
+  plate:
+    country: PK
+    min_confidence: 0.6
+    format_regexes:
+      - "^[A-Z]{2,3}-?[0-9]{2,4}$"   # e.g. LEA-1234
+      - "^[A-Z]{3}[0-9]{2,3}$"
+
+storage:
+  db_url_env: PSO_DB_URL
+  snapshot_dir_env: PSO_SNAPSHOT_DIR
+  retention_days_env: PSO_RETENTION_DAYS
+
+api:
+  cors_origins:
+    - "http://localhost:5173"
+    - "http://localhost:3000"
+    - "http://127.0.0.1:5173"
+    - "http://127.0.0.1:3000"
+  websocket_path: /ws/events
+
+metrics:
+  precision_window_days: 7
+  latency_bucket_ms: [250, 500, 1000, 2000, 5000]

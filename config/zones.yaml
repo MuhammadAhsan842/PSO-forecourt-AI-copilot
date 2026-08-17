@@ -1,0 +1,53 @@
+# Per-camera scene geometry. Coordinates are pixel-space on the analytics frame
+# (post-decode; frame size is documented per camera when defined). Polygons close automatically.
+#
+# Zone kinds:
+#   pump_bay         — a rectangle around a dispenser; a "vehicle settled here" trigger for M8.
+#   queue            — dwell counting; alert when N vehicles wait > T seconds.
+#   restricted       — area no one should enter (e.g. behind the pump).
+#   exit_line        — a directed line: crossing counts as a departure.
+# after_hours: local-time window (24h) when any vehicle/person triggers an alert.
+
+after_hours:
+  timezone: Asia/Karachi
+  start: "23:00"
+  stop: "05:30"
+
+cameras:
+  ptz1:
+    frame:
+      width: 1920
+      height: 1080
+    zones:
+      - id: pump_a_bay
+        kind: pump_bay
+        pump_id: A
+        polygon:
+          - [520, 620]
+          - [980, 620]
+          - [1000, 980]
+          - [500, 980]
+        settle_seconds: 3
+      - id: queue_lane
+        kind: queue
+        polygon:
+          - [100, 400]
+          - [1800, 400]
+          - [1800, 600]
+          - [100, 600]
+        dwell_seconds: 60
+        min_vehicles: 3
+      - id: cashier_restricted
+        kind: restricted
+        polygon:
+          - [1500, 100]
+          - [1900, 100]
+          - [1900, 300]
+          - [1500, 300]
+        entry_alert: true
+    lines:
+      - id: exit_line
+        kind: exit_line
+        a: [50, 700]
+        b: [1900, 700]
+        direction: "north_to_south"     # departure direction
