@@ -35,18 +35,25 @@ cameras:
     model_hint: "Dahua fixed (8MP)"
     presets: {}
 
-  # On-site pilot camera at PSO 295-A. FIXED 8MP bullet (DH-IPC-HFW1839TC-A-IL):
-  # no pan/tilt/zoom/focus — the only readability lever is exposure/shutter/WDR.
-  # Meter/plate readability on this wide view is the M1/M2 gate to prove first.
+  # On-site pilot camera at PSO 295-A. The cameras sit behind a Dahua NVR
+  # (DHI-NVR5216-EI, 16ch, at 192.168.1.114); we pull the stream from the NVR by
+  # CHANNEL. host_env therefore points at the NVR IP, and nvr_channel selects the
+  # camera. The camera itself is a FIXED 8MP bullet (DH-IPC-HFW1839TC-A-IL): no
+  # pan/tilt/zoom/focus, so exposure/shutter/WDR is the only readability lever —
+  # and it may have to be set on the camera via the NVR's Remote Device menu
+  # rather than over ONVIF. Meter/plate readability is the M1/M2 gate to prove.
   - id: pump_a
     name: "Pump A — PSO 295-A"
     role: fixed_meter
     is_ptz: false
     fps: 8
-    rtsp_env: CAM_PUMP_A_RTSP
-    host_env: CAM_PUMP_A_HOST
+    nvr_channel: 1               # confirm the meter-facing channel on the NVR
+    subtype: 0                   # 0 = main 4K; switch to 1 if the GPU needs a lighter stream
+    rtsp_port: 554
+    rtsp_env: CAM_PUMP_A_RTSP    # optional explicit override; else built from host+channel
+    host_env: CAM_PUMP_A_HOST    # = NVR IP (192.168.1.114)
     onvif_port_env: CAM_PUMP_A_ONVIF_PORT
     user_env: CAM_PUMP_A_USER
     pass_env: CAM_PUMP_A_PASS
-    model_hint: "DH-IPC-HFW1839TC-A-IL (fixed 8MP)"
+    model_hint: "DH-IPC-HFW1839TC-A-IL via DHI-NVR5216-EI"
     presets: {}
