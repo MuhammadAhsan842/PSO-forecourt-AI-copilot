@@ -2,6 +2,26 @@
 
 Execute in order. Each milestone ends with a passing test AND a runnable demo. No skipping.
 
+## Status at a glance
+
+| M | Milestone | Status |
+|---|---|---|
+| M0 | Scaffold & rails | ✅ done |
+| M1 | Camera-control probe *(gate)* | ⏳ code complete — **pending on-site camera** |
+| M2 | Blur-free human-verified capture *(gate)* | ⏳ code complete — **pending on-site camera** |
+| M3 | Repeatable sharp presets | ⏳ code complete — **pending on-site camera** |
+| M4 | RTSP ingest & baseline | ✅ code complete (unrun against a 30-min live stream) |
+| M5 | Detection & tracking | ✅ real; needs `.[inference]` weights (`bootstrap_models.py`) |
+| M6 | Operational core | ✅ done, tested |
+| M7 | Backend, storage & dashboard | ✅ done |
+| M8 | Choreographed capture sequencer | ✅ logic done (unrun on camera) |
+| M9 | Meter reading | ✅ real seven-seg reader + arithmetic check; verified on synthetic renders, **awaits on-site frames** |
+| M10 | Plate reading & sale↔vehicle link | ✅ PK normalisation + drive-off with amount; **awaits on-site frames** |
+| M11 | Prove, tune & pilot report | ✅ report joins feedback + before/after; runs once data accrues |
+
+Gates M1–M3 can only be *passed* on the real Dahua camera (§0, §12). M9/M10
+accuracy is claimed to the client only after a confirmed-readable capture exists.
+
 ## M0 — Scaffold & rails
 Runnable skeleton with config, logging, tests, Docker, metrics stub.
 

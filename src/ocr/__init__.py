@@ -11,10 +11,10 @@ from .plate_pk import PK_PLATE_PATTERNS, is_valid_pk_plate, normalize_plate
 from .seven_seg import SevenSegConfig, SevenSegReader, render_seven_seg
 
 __all__ = [
+    "PK_PLATE_PATTERNS",
     "MeterReader",
     "MeterReading",
     "MeterSaleState",
-    "PK_PLATE_PATTERNS",
     "PlateReader",
     "PlateReading",
     "SevenSegConfig",

@@ -1,0 +1,41 @@
+{
+  "synthetic": true,
+  "label": "night",
+  "frame": {
+    "width": 960,
+    "height": 540
+  },
+  "fps": 10,
+  "seconds": 8,
+  "meter_rois": {
+    "amount": [
+      699,
+      40,
+      240,
+      88
+    ],
+    "litres": [
+      699,
+      136,
+      200,
+      88
+    ],
+    "rate": [
+      699,
+      232,
+      200,
+      88
+    ]
+  },
+  "field_digits": {
+    "amount": 6,
+    "litres": 5,
+    "rate": 5
+  },
+  "decimals": 2,
+  "ground_truth": {
+    "amount": 1635.0,
+    "litres": 6.0,
+    "rate": 272.5
+  }
+}

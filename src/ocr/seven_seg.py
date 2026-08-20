@@ -117,12 +117,19 @@ def _binarise(gray: np.ndarray, invert: bool | None) -> np.ndarray:
     return (gray <= thr) if invert else bright
 
 
-def _crop_to_ink(mask: np.ndarray, min_ink_fraction: float) -> np.ndarray:
-    """Trim surrounding margin/gaps so an even N-way split lands on the digits.
+def _crop_rows_to_ink(mask: np.ndarray, min_ink_fraction: float) -> np.ndarray:
+    """Trim only the top/bottom bezel. Horizontal extent is preserved so a fixed
+    per-pump ROI's cell grid — including a leading '1' whose left is blank — stays
+    aligned under an even N-way split."""
+    rows = np.where(mask.mean(axis=1) > min_ink_fraction)[0]
+    if rows.size == 0:
+        return mask
+    return mask[rows[0] : rows[-1] + 1, :]
 
-    Real per-pump ROIs (and our renderer) carry a bezel/margin; cropping to the
-    ink bounding box makes the fixed-cell split robust to that padding.
-    """
+
+def _crop_to_ink(mask: np.ndarray, min_ink_fraction: float) -> np.ndarray:
+    """Full bounding-box crop — used only by the auto (projection) path, where the
+    number of digits is unknown and we segment by ink columns anyway."""
     if mask.mean() < min_ink_fraction:
         return mask
     rows = np.where(mask.mean(axis=1) > min_ink_fraction)[0]
@@ -226,11 +233,13 @@ class SevenSegReader:
         if mask.mean() < self.config.min_ink_fraction:
             return ("", 0.0)  # blank display — say so, don't invent a zero
 
-        mask = _crop_to_ink(mask, self.config.min_ink_fraction)
-
         if self.config.num_digits:
+            # Fixed per-pump ROI: trust its width, split into N equal cells.
+            mask = _crop_rows_to_ink(mask, self.config.min_ink_fraction)
             bounds = _cell_bounds(mask.shape[1], self.config.num_digits)
         else:
+            # Unknown digit count: bounding-box crop + segment by ink columns.
+            mask = _crop_to_ink(mask, self.config.min_ink_fraction)
             spans = _digit_columns(mask, self.config.min_ink_fraction)
             bounds = spans or _cell_bounds(mask.shape[1], 1)
 
@@ -287,29 +296,30 @@ def render_seven_seg(
     cell_h: int = 72,
     on: int = 235,
     off: int = 18,
-    margin: int = 8,
+    vmargin: int = 8,
 ) -> np.ndarray:
     """Render digits (ignoring any '.') as a bright-on-dark seven-seg field.
 
-    Cells tile edge-to-edge (uniform pitch = ``cell_w``); the visible inter-digit
-    gap comes from the stroke insets. A ``margin`` bezel surrounds the field, which
-    the reader crops away — mirroring a real per-pump ROI.
+    Cells tile edge-to-edge with NO horizontal margin, so the field width is
+    exactly ``num_digits * cell_w`` — a fixed-ROI even split lands on the cells,
+    a leading '1' included. A small ``vmargin`` bezel top/bottom is cropped by the
+    reader, mirroring a real per-pump ROI.
     """
     plain = text.replace(".", "")
     n = max(len(plain), 1)
-    img = np.full((cell_h + 2 * margin, n * cell_w + 2 * margin, 3), off, dtype=np.uint8)
+    img = np.full((cell_h + 2 * vmargin, n * cell_w, 3), off, dtype=np.uint8)
     for i, ch in enumerate(plain):
         pattern = _DIGIT_PATTERNS.get(ch)
         if pattern is None:
             continue
-        cx0 = margin + i * cell_w
-        for seg, bit in zip(_SEGMENT_ORDER, pattern):
+        cx0 = i * cell_w
+        for seg, bit in zip(_SEGMENT_ORDER, pattern, strict=True):
             if not bit:
                 continue
             fx0, fy0, fx1, fy1 = _RENDER_STROKES[seg]
             x0 = cx0 + int(fx0 * cell_w)
             x1 = cx0 + int(fx1 * cell_w)
-            y0 = margin + int(fy0 * cell_h)
-            y1 = margin + int(fy1 * cell_h)
+            y0 = vmargin + int(fy0 * cell_h)
+            y1 = vmargin + int(fy1 * cell_h)
             img[y0:y1, x0:x1] = on
     return img

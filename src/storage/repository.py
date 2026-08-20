@@ -9,11 +9,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 
 from src.common.types import EventKind, EventRecord, Feedback
 from src.storage.db import DBSession
-from src.storage.models import CameraHealthRow, EventRow, FeedbackRow
+from src.storage.models import CameraHealthRow, EventRow, FeedbackRow, ReadingRow
 
 
 def _row_to_event(row: EventRow) -> EventRecord:
@@ -123,6 +123,56 @@ async def feedback_summary_since(
     )
     rows = (await session.execute(stmt)).all()
     return {v: int(c) for v, c in rows}
+
+
+async def feedback_by_kind_since(
+    session: DBSession, since: datetime
+) -> dict[str, dict[str, int]]:
+    """Per event-kind true/false counts, joining feedback to its event.
+
+    This is what makes precision real in the pilot report — a verdict is attached
+    to an event, and an event has a kind, so precision must be computed per kind.
+    """
+    stmt = (
+        select(EventRow.kind, FeedbackRow.verdict, func.count())
+        .join(FeedbackRow, FeedbackRow.event_id == EventRow.id)
+        .where(FeedbackRow.ts >= since)
+        .group_by(EventRow.kind, FeedbackRow.verdict)
+    )
+    rows = (await session.execute(stmt)).all()
+    out: dict[str, dict[str, int]] = {}
+    for kind, verdict, count in rows:
+        bucket = out.setdefault(kind, {"true": 0, "false": 0})
+        if verdict in bucket:
+            bucket[verdict] = int(count)
+    return out
+
+
+async def purge_rows_older_than(session: DBSession, cutoff: datetime) -> dict[str, int]:
+    """Delete events/feedback/readings with ts < cutoff. Returns per-table counts.
+
+    Feedback is removed first to respect the events FK. This is the DB half of the
+    §9 retention policy; the snapshot half lives in ``storage.snapshots``.
+    """
+    removed: dict[str, int] = {}
+
+    old_event_ids = (
+        await session.execute(select(EventRow.id).where(EventRow.ts < cutoff))
+    ).scalars().all()
+    if old_event_ids:
+        r = await session.execute(
+            delete(FeedbackRow).where(FeedbackRow.event_id.in_(old_event_ids))
+        )
+        removed["feedback"] = int(r.rowcount or 0)
+
+    r = await session.execute(delete(ReadingRow).where(ReadingRow.ts < cutoff))
+    removed["readings"] = int(r.rowcount or 0)
+
+    r = await session.execute(delete(EventRow).where(EventRow.ts < cutoff))
+    removed["events"] = int(r.rowcount or 0)
+
+    await session.commit()
+    return removed
 
 
 async def camera_status(session: DBSession) -> list[dict[str, Any]]:
