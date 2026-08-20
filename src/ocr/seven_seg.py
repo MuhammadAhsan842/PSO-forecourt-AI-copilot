@@ -303,7 +303,7 @@ def render_seven_seg(
         if pattern is None:
             continue
         cx0 = margin + i * cell_w
-        for seg, bit in zip(_SEGMENT_ORDER, pattern):
+        for seg, bit in zip(_SEGMENT_ORDER, pattern, strict=True):
             if not bit:
                 continue
             fx0, fy0, fx1, fy1 = _RENDER_STROKES[seg]
