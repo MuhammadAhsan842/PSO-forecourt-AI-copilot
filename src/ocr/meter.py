@@ -203,3 +203,38 @@ def _to_float(s: str) -> float | None:
         return float(s)
     except (ValueError, TypeError):
         return None
+
+
+def build_seven_seg_reader(
+    *,
+    litres_digits: int | None = None,
+    litres_decimals: int = 2,
+    amount_digits: int | None = None,
+    amount_decimals: int = 2,
+    rate_digits: int | None = None,
+    rate_decimals: int = 2,
+    settle_seconds: float = 2.0,
+    arithmetic_tolerance: float = 0.02,
+) -> MeterReader:
+    """Construct a ``MeterReader`` backed by the real classical seven-seg decoder.
+
+    This is the M9 baseline reader — it returns measured digits from a clean
+    display. ``*_digits`` / ``*_decimals`` are the per-pump ROI layout from config
+    (the "fixed per pump" split the plan calls for). Swap in a CNN classifier
+    later without touching callers.
+    """
+    from src.ocr.seven_seg import SevenSegConfig, SevenSegReader
+
+    return MeterReader(
+        classifier_litres=SevenSegReader(
+            SevenSegConfig(num_digits=litres_digits, decimals=litres_decimals)
+        ),
+        classifier_amount=SevenSegReader(
+            SevenSegConfig(num_digits=amount_digits, decimals=amount_decimals)
+        ),
+        classifier_rate=SevenSegReader(
+            SevenSegConfig(num_digits=rate_digits, decimals=rate_decimals)
+        ),
+        settle_seconds=settle_seconds,
+        arithmetic_tolerance=arithmetic_tolerance,
+    )
