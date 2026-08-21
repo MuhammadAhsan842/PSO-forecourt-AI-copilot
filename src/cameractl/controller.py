@@ -42,6 +42,28 @@ class CameraController:
         self._ptz = None
         self._profile_token: str | None = None
         self._video_source_token: str | None = None
+        self._http = None  # lazily-built Dahua HTTP CGI client
+
+    # ------- Dahua HTTP CGI (primary imaging-control path) -----------------
+
+    def _http_client(self):
+        """Build (once) the Dahua HTTP client, addressing the camera even when it
+        sits behind the NVR (via the virtual-host port)."""
+        if self._http is not None:
+            return self._http
+        from src.cameractl.dahua_http import DahuaCameraHTTP
+
+        cam = self.camera
+        if not (cam.host and cam.user and cam.password):
+            raise ControlError("camera credentials missing for HTTP control")
+        # Behind an NVR: talk to the camera on the NVR IP + its virtual-host port.
+        port = cam.vhost_port or cam.http_port
+        self._http = DahuaCameraHTTP(
+            cam.host, cam.user, cam.password,
+            port=port, use_https=cam.use_https,
+            snapshot_channel=cam.nvr_channel or 1,
+        )
+        return self._http
 
     # ------- lifecycle -----------------------------------------------------
 
@@ -90,6 +112,54 @@ class CameraController:
 
     # ------- imaging -------------------------------------------------------
 
+    def set_exposure_http(
+        self,
+        *,
+        mode: str = "manual",
+        shutter: str | None = None,
+        gain: int | None = None,
+        wdr: bool | None = None,
+        wdr_value: int = 50,
+        backlight: str | None = None,
+    ) -> None:
+        """Set exposure/WDR via the Dahua HTTP CGI — the reliable programmatic path.
+
+        This is what un-glares the meter from code (§3). Works on a directly-
+        addressable camera or one behind the NVR virtual host. Raises ControlError
+        on any failure so the caller degrades gracefully.
+        """
+        from src.cameractl.dahua_http import DahuaHTTPError
+
+        try:
+            http = self._http_client()
+            if mode == "auto":
+                http.set_auto_exposure()
+            else:
+                http.set_exposure_manual(shutter=shutter, gain=gain)
+            if wdr is not None:
+                http.set_wdr(wdr, value=wdr_value)
+            if backlight is not None:
+                http.set_backlight(backlight)
+        except DahuaHTTPError as exc:
+            raise ControlError(f"set_exposure_http failed: {exc}") from exc
+        log.info(
+            "exposure_set_http",
+            extra={
+                "camera_id": self.camera.id,
+                "context": {"mode": mode, "shutter": shutter, "gain": gain, "wdr": wdr,
+                            "backlight": backlight},
+            },
+        )
+
+    def snapshot_http(self) -> bytes:
+        """Grab a still straight from the camera CGI (bytes)."""
+        from src.cameractl.dahua_http import DahuaHTTPError
+
+        try:
+            return self._http_client().snapshot()
+        except DahuaHTTPError as exc:
+            raise ControlError(f"snapshot_http failed: {exc}") from exc
+
     def set_exposure(
         self,
         *,
@@ -98,7 +168,11 @@ class CameraController:
         gain_db: float | None = None,
         wdr: bool | None = None,
     ) -> None:
-        """Push exposure settings. ``mode`` is "auto" or "manual"."""
+        """Push exposure settings over ONVIF. ``mode`` is "auto" or "manual".
+
+        Prefer ``set_exposure_http`` for Dahua — ONVIF imaging is often a partial
+        surface. This remains for ONVIF-only devices.
+        """
         if self._imaging is None or self._video_source_token is None:
             raise ControlError("imaging service not initialized (call connect() first)")
 

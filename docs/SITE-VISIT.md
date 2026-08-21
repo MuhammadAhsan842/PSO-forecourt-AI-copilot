@@ -37,19 +37,29 @@ this visit.
    ```
    Open `data/nvr_scan/channel_XX.jpg`, find the pump/meter camera, **note its channel number.**
 
-4. **The readability call (the important one).** Grab the meter channel at full 4K:
+4. **The readability call (the important one) — from our code.** We drive the
+   exposure/WDR sweep over the Dahua HTTP CGI and capture the meter automatically:
    ```
-   python -m scripts.nvr_scan --channel <N> --subtype 0
+   # first pass: dump full frames, read off the meter's pixel box
+   python -m scripts.tune_exposure --camera pump_a
+   # then pass the meter box [X Y W H] to get zoomed before/after crops:
+   python -m scripts.tune_exposure --camera pump_a --meter 1380 40 250 90
    ```
-   Look at the meter in that still. Then, in the **NVR menu → Camera → Image / Exposure**
-   for that channel, try:
-   - lower **Exposure / faster shutter** (e.g. 1/250 → 1/1000) so the bright display stops glaring,
-   - turn **WDR / BLC (backlight)** on,
-   re-grab the still after each change, and see whether the **digits become human-readable**.
-   - ✅ Readable → the meter reader runs on this camera. Gate passed.
-   - ❌ Still too small/glared even with good exposure → flag for a **second, tighter
+   It tries auto → fast shutter → WDR → BLC, saves a `*_meter.jpg` crop for each,
+   and prints a table (a lower `MEAN`, well under 250, means the display is no
+   longer clipped to white — i.e. digits are actually present).
+   - **If the camera is behind the NVR virtual host**, add `--vhost-port <port>`
+     (from step 3b). If exposure control is refused, fall back to the manual
+     **NVR menu → Camera → Image** for that channel — same settings, by hand.
+   - ✅ Digits become human-readable in a `*_meter.jpg` → the meter reader runs on
+     this camera. Gate passed. **Lock that setting.**
+   - ❌ Still too small/glared even at best exposure → flag for a **second, tighter
      camera on the meter** (§13). Note it; don't force it.
-   Save the best before/after meter stills — this is the demo that sells PSO.
+   Keep the best before/after meter crops — this is the demo that sells PSO.
+
+   3b. *(optional, for code control of the camera)* enable **NVR → Network →
+   Virtual Host / P2P**; the NVR then maps each camera to a port on its own IP.
+   Note the port for the pump channel — that's the `--vhost-port` value.
 
 5. **Leave remote access behind (so you stop driving out).** On the box that stays
    on-site (the mini-PC; temporarily your laptop only proves it works):

@@ -57,3 +57,40 @@ def test_imaging_error_is_wrapped(monkeypatch) -> None:
 def test_list_presets_without_ptz_returns_empty() -> None:
     ctrl = CameraController(_cam(host="1.2.3.4", user="admin", password="x"))
     assert ctrl.list_presets() == []
+
+
+def test_set_exposure_http_uses_dahua_client() -> None:
+    from src.cameractl.dahua_http import DahuaCameraHTTP
+
+    class _MockSession:
+        def __init__(self):
+            self.calls = []
+
+        def get(self, url, timeout=None):
+            self.calls.append(url)
+            return type("R", (), {"text": "OK", "status_code": 200, "content": b""})()
+
+    ctrl = CameraController(_cam(host="192.168.1.114", user="admin", password="x"))
+    sess = _MockSession()
+    # Inject a client backed by the mock session.
+    ctrl._http = DahuaCameraHTTP("192.168.1.114", "admin", "x", session=sess)
+
+    ctrl.set_exposure_http(mode="manual", shutter="1/1000", gain=30, wdr=True, backlight="blc")
+    joined = " ".join(sess.calls)
+    assert "VideoInExposure[0][0].Mode=1" in joined
+    assert "VideoInExposure[0][0].Shutter=1/1000" in joined
+    assert "VideoInWideDynamicRange[0][0].Mode=1" in joined
+    assert "VideoInBacklight[0][0].Mode=1" in joined
+
+
+def test_set_exposure_http_wraps_errors() -> None:
+    from src.cameractl.dahua_http import DahuaCameraHTTP
+
+    class _BadSession:
+        def get(self, url, timeout=None):
+            return type("R", (), {"text": "", "status_code": 401, "content": b""})()
+
+    ctrl = CameraController(_cam(host="192.168.1.114", user="admin", password="x"))
+    ctrl._http = DahuaCameraHTTP("192.168.1.114", "admin", "x", session=_BadSession())
+    with pytest.raises(ControlError):
+        ctrl.set_exposure_http(mode="auto")

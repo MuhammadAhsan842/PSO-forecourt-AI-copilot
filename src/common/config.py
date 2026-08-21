@@ -93,6 +93,14 @@ class CameraConfig(BaseModel):
     subtype: int = 0  # 0 = main (4K), 1 = sub-stream (lighter for analytics)
     rtsp_port: int = 554
 
+    # Programmatic imaging control (Dahua HTTP CGI). For a camera BEHIND the NVR,
+    # set vhost_port to the NVR virtual-host port mapped to this camera (host stays
+    # the NVR IP); the CGI then reaches the camera directly. For a directly-
+    # addressable camera, leave vhost_port unset and http_port is used on `host`.
+    http_port: int = 80
+    vhost_port: int | None = None
+    use_https: bool = False
+
     # Resolved at load time from env
     rtsp_url: str = ""
     host: str | None = None
