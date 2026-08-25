@@ -172,21 +172,45 @@ def main(argv: list[str] | None = None) -> int:
     )
     _print_table(results)
 
+    manifest_path = args.out / "manifest.json"
+    existing: dict = {}
+    if manifest_path.exists():
+        with contextlib.suppress(Exception):
+            existing = json.loads(manifest_path.read_text())
+
+    # Merge: keep prior channels, overwrite the ones we just re-scanned.
+    fresh_by_ch = {
+        r["channel"]: {
+            **r,
+            "still": Path(r["still"]).name if r["still"] else None,
+        }
+        for r in results
+    }
+    prior_channels = existing.get("channels", []) if isinstance(existing, dict) else []
+    merged: list[dict] = []
+    seen = set()
+    for entry in prior_channels:
+        ch = int(entry.get("channel", 0))
+        if ch in fresh_by_ch:
+            # Preserve any human-added label from the old entry.
+            new = fresh_by_ch.pop(ch)
+            if entry.get("label") and not new.get("label"):
+                new["label"] = entry["label"]
+            merged.append(new)
+        else:
+            merged.append(entry)
+        seen.add(ch)
+    for ch in sorted(fresh_by_ch):
+        merged.append(fresh_by_ch[ch])
+
     manifest = {
         "host": args.host,
         "scanned_at": datetime.utcnow().isoformat() + "Z",
         "subtype": args.subtype,
-        "channels": [
-            {
-                # File name only; the API mounts the dir and prefixes URLs itself.
-                **r,
-                "still": Path(r["still"]).name if r["still"] else None,
-            }
-            for r in results
-        ],
+        "channels": merged,
     }
-    (args.out / "manifest.json").write_text(json.dumps(manifest, indent=2))
-    print(f"wrote {args.out / 'manifest.json'}", flush=True)
+    manifest_path.write_text(json.dumps(manifest, indent=2))
+    print(f"wrote {manifest_path}", flush=True)
 
     return 0 if any(r["live"] for r in results) else 1
 
