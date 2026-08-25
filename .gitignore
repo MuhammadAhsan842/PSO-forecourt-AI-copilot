@@ -21,8 +21,11 @@ data/snapshots/
 data/clips/
 data/baseline/
 data/reports/
+data/nvr_scan/
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 

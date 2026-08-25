@@ -7,6 +7,7 @@ import { LiveAlertToast } from "./components/LiveAlertToast";
 import { EventLog } from "./components/EventLog";
 import { EventFilters } from "./components/EventFilters";
 import { Header } from "./components/Header";
+import { NvrGrid } from "./components/NvrGrid";
 
 const REFRESH_MS = 15000;
 
@@ -74,6 +75,7 @@ export default function App() {
       <Header live={live} />
       <StatCards summary={summary} />
       <CameraHealthBar cameras={cameras} />
+      <NvrGrid />
       <EventFilters
         cameraIds={cameraIds}
         camera={filterCamera}

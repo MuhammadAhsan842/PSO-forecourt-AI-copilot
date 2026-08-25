@@ -22,7 +22,9 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 import requests
@@ -169,6 +171,23 @@ def main(argv: list[str] | None = None) -> int:
         channels=channels, subtype=args.subtype, rtsp_port=args.rtsp_port, out_dir=args.out,
     )
     _print_table(results)
+
+    manifest = {
+        "host": args.host,
+        "scanned_at": datetime.utcnow().isoformat() + "Z",
+        "subtype": args.subtype,
+        "channels": [
+            {
+                # File name only; the API mounts the dir and prefixes URLs itself.
+                **r,
+                "still": Path(r["still"]).name if r["still"] else None,
+            }
+            for r in results
+        ],
+    }
+    (args.out / "manifest.json").write_text(json.dumps(manifest, indent=2))
+    print(f"wrote {args.out / 'manifest.json'}", flush=True)
+
     return 0 if any(r["live"] for r in results) else 1
 
 

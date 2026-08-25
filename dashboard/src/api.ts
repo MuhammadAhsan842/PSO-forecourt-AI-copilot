@@ -44,6 +44,31 @@ export function snapshotUrl(rel: string | null): string | null {
   return `${API_BASE}/snapshots/${rel}`;
 }
 
+export interface NvrChannel {
+  channel: number;
+  live: boolean;
+  resolution: string | null;
+  still: string | null;
+  label: string | null;
+}
+
+export interface NvrManifest {
+  host: string;
+  scanned_at: string;
+  subtype: number;
+  channels: NvrChannel[];
+}
+
+export async function fetchNvrChannels(): Promise<NvrManifest> {
+  const r = await fetch(`${API_BASE}/api/v1/nvr/channels`);
+  if (!r.ok) throw new Error(`GET /nvr/channels ${r.status}`);
+  return r.json();
+}
+
+export function nvrStillUrl(fileName: string): string {
+  return `${API_BASE}/nvr-stills/${fileName}`;
+}
+
 export function openEventStream(onMessage: (msg: WsMessage) => void, onStatus: (open: boolean) => void): () => void {
   const url = `${WS_BASE}/ws/events`;
   let ws: WebSocket | null = null;
