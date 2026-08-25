@@ -21,13 +21,52 @@ reaches the camera controls — it only reads streams (safe, read-only).
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 from pathlib import Path
+
+import requests
+from requests.auth import HTTPDigestAuth
 
 from src.common.config import build_nvr_rtsp_url
 from src.common.logging import get_logger, setup_logging
 
 log = get_logger(__name__)
+
+
+def _preflight_auth(host: str, user: str, password: str, http_port: int = 80) -> tuple[bool, str]:
+    """HTTP-check the NVR credentials before hammering RTSP.
+
+    Returns ``(ok, message)``. Uses Dahua's magicBox getSystemInfo — cheap
+    and doesn't touch any camera. If the response body contains ``RmLock``
+    the account is temporarily locked (brute-force protection); we abort
+    early with the remaining lock time so we don't extend it.
+    """
+    url = f"http://{host}:{http_port}/cgi-bin/magicBox.cgi?action=getSystemInfo"
+    try:
+        r = requests.get(url, auth=HTTPDigestAuth(user, password), timeout=5)
+    except requests.RequestException as exc:
+        return False, f"HTTP unreachable ({exc})"
+    body = r.text or ""
+    if "RmLock" in body:
+        secs = 0
+        for line in body.splitlines():
+            if "RmLock" in line:
+                with contextlib.suppress(ValueError):
+                    secs = int(line.split(":")[1].strip().rstrip(","))
+        mins = secs // 60
+        return False, (
+            f"NVR admin account is LOCKED (~{mins} min remaining, {secs}s). "
+            "Clear it on the NVR local console (Main Menu -> Account) or wait it out. "
+            "Do NOT retry now or the lockout will extend."
+        )
+    if r.status_code == 401:
+        return False, "401 Unauthorized — wrong username/password."
+    if r.status_code == 403:
+        return False, "403 Forbidden — account exists but lacks permission (try a different user)."
+    if r.status_code != 200:
+        return False, f"HTTP {r.status_code} — unexpected: {body[:120]}"
+    return True, body.strip().splitlines()[0] if body else "ok"
 
 
 def _grab_frame(rtsp_url: str, open_timeout_ms: int = 5000):
@@ -116,6 +155,13 @@ def main(argv: list[str] | None = None) -> int:
     if not args.host:
         print("no NVR host — set CAM_PUMP_A_HOST in .env or pass --host", flush=True)
         return 2
+
+    if args.user and args.password:
+        ok, msg = _preflight_auth(args.host, args.user, args.password)
+        if not ok:
+            print(f"preflight FAILED: {msg}", flush=True)
+            return 3
+        print(f"preflight OK: {msg}", flush=True)
 
     channels = [args.channel] if args.channel else list(range(1, args.channels + 1))
     results = scan(

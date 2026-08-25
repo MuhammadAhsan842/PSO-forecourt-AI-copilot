@@ -13,6 +13,7 @@ import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import yaml
 from pydantic import BaseModel, Field
@@ -118,8 +119,13 @@ def build_nvr_rtsp_url(
     Format: rtsp://user:pass@host:554/cam/realmonitor?channel=N&subtype=S
     Works for both NVRs (channel = recorder channel) and standalone Dahua
     cameras (channel = 1).
+
+    User and password are percent-encoded — this matters when the password
+    contains an ``@`` (a real-world example: ``admin@123``). Without
+    encoding, FFmpeg picks the first ``@`` as the userinfo separator and
+    the auth silently fails as 401 Unauthorized.
     """
-    creds = f"{user}:{password}@" if user else ""
+    creds = f"{quote(user, safe='')}:{quote(password or '', safe='')}@" if user else ""
     return (
         f"rtsp://{creds}{host}:{rtsp_port}"
         f"/cam/realmonitor?channel={channel}&subtype={subtype}"
