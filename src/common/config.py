@@ -86,12 +86,44 @@ class CameraConfig(BaseModel):
     model_hint: str | None = None
     presets: dict[str, str] = Field(default_factory=dict)
 
+    # NVR-fronted cameras: the stream comes from the recorder by channel number,
+    # so `host` is the NVR IP and `nvr_channel` selects the camera. When set (and
+    # no explicit rtsp_url env is provided) the RTSP URL is built at load time.
+    nvr_channel: int | None = None
+    subtype: int = 0  # 0 = main (4K), 1 = sub-stream (lighter for analytics)
+    rtsp_port: int = 554
+
+    # Programmatic imaging control (Dahua HTTP CGI). For a camera BEHIND the NVR,
+    # set vhost_port to the NVR virtual-host port mapped to this camera (host stays
+    # the NVR IP); the CGI then reaches the camera directly. For a directly-
+    # addressable camera, leave vhost_port unset and http_port is used on `host`.
+    http_port: int = 80
+    vhost_port: int | None = None
+    use_https: bool = False
+
     # Resolved at load time from env
     rtsp_url: str = ""
     host: str | None = None
     onvif_port: int | None = None
     user: str | None = None
     password: str | None = None
+
+
+def build_nvr_rtsp_url(
+    *, host: str, user: str | None, password: str | None, channel: int,
+    subtype: int = 0, rtsp_port: int = 554,
+) -> str:
+    """Construct a Dahua NVR RTSP URL for a given channel.
+
+    Format: rtsp://user:pass@host:554/cam/realmonitor?channel=N&subtype=S
+    Works for both NVRs (channel = recorder channel) and standalone Dahua
+    cameras (channel = 1).
+    """
+    creds = f"{user}:{password}@" if user else ""
+    return (
+        f"rtsp://{creds}{host}:{rtsp_port}"
+        f"/cam/realmonitor?channel={channel}&subtype={subtype}"
+    )
 
 
 class ZonePolygon(BaseModel):
@@ -168,6 +200,16 @@ def load_cameras(path: Path | None = None) -> list[CameraConfig]:
         cam.onvif_port = int(port_str) if port_str else None
         cam.user = _resolve_env(cam.user_env)
         cam.password = _resolve_env(cam.pass_env)
+        # NVR-fronted camera with no explicit RTSP env → build from host+channel.
+        if not cam.rtsp_url and cam.host and cam.nvr_channel is not None:
+            cam.rtsp_url = build_nvr_rtsp_url(
+                host=cam.host,
+                user=cam.user,
+                password=cam.password,
+                channel=cam.nvr_channel,
+                subtype=cam.subtype,
+                rtsp_port=cam.rtsp_port,
+            )
         out.append(cam)
     return out
 

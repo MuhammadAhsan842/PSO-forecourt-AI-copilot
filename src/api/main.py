@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from src import __version__
-from src.api.routes import events, feedback, snapshots, stats, system
+from src.api.routes import admin, events, feedback, snapshots, stats, system
 from src.api.websocket import register_websocket
 from src.common.config import get_settings, load_settings_yaml
 from src.common.logging import get_logger, setup_logging
@@ -76,6 +76,7 @@ def create_app() -> FastAPI:
     app.include_router(feedback.router, prefix="/api/v1")
     app.include_router(snapshots.router, prefix="/api/v1")
     app.include_router(stats.router, prefix="/api/v1")
+    app.include_router(admin.router, prefix="/api/v1")
 
     register_websocket(app, path=yaml_settings.get("api", {}).get(
         "websocket_path", "/ws/events"
