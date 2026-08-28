@@ -1,0 +1,22 @@
+# Meter optics defaults — Phase 0.
+# Pixel gate is the contract. Do not lower these to "pass" a wide-cam crop.
+
+gate:
+  min_width_px: 600
+  min_height_px: 300
+
+# Known idle crop on M1 / NVR channel 9 (3840×2160, 2026-08-26). Expected FAIL.
+pilot_m1_ch9:
+  nvr_channel: 9
+  is_ptz: false
+  subtype: 0
+  roi: [1800, 700, 220, 110]
+
+# Channel 10 PTZ — only optical-zoom candidate on this NVR today.
+# Preset 2 is an overview of pumps 10/4/8, NOT a proven M1 meter shot.
+# Save a dedicated meter preset on-site, then pass --preset-index.
+ch10_ptz:
+  nvr_channel: 10
+  is_ptz: true
+  subtype: 0
+  overview_preset_index: 2

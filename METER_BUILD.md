@@ -183,10 +183,23 @@ Work stops after each phase until you confirm.
 
 ---
 
-## 4. What I will do next (not started)
+## 4. Phase 0 tooling — delivered
 
-After you approve this map (and the assumptions):
+Run on the station LAN (or VPN) **during a live fill**. Do not build the reader until you report PASS.
 
-**Phase 0 tooling only** — PTZ preset recall, 4K burst capture, auto-measure report, site-survey checklist. Then I stop until you report **PASS** or **FAIL** per pump.
+```bash
+# M1 / ch9 fixed wide — expected FAIL on the 600×300 pixel gate
+python -m scripts.meter_optics_proof --channel 9 --no-ptz --burst 20 \
+    --roi 1800 700 220 110 --out data/meter_optics/m1_ch9
 
-If M1 on ch9 is FAIL (expected) and ch10 cannot reach the meter, the deliverable is a **hardware line-item** (dedicated meter camera), not a software reader on 220×110 px.
+# List PTZ presets on channel 10
+python -m scripts.meter_optics_proof --channel 10 --list-presets --burst 0
+
+# After you save a meter-aimed preset on ch10, slew then burst (change ROI by eye)
+python -m scripts.meter_optics_proof --channel 10 --preset-index 2 --settle 6 --burst 30 \
+    --roi 1800 700 400 250 --out data/meter_optics/m1_via_ch10_ptz
+```
+
+Host/user/password default from `.env` (`CAM_PUMP_A_*`). Override with `--host --user --password`. Exit 8 = pixel-gate FAIL (frames still written). Fill `docs/METER-SITE-SURVEY.md` and set `human_readable_during_fill` in the JSON after you watch the fill.
+
+**Stop here.** Reply **PASS** or **FAIL** for the pilot pump. FAIL + ch10 cannot see M1 → dedicated meter camera, not a reader on 220×110.
