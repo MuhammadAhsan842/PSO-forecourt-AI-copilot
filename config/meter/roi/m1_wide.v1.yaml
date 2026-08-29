@@ -1,0 +1,7 @@
+pump_id: m1
+preset: wide
+version: 1
+frame_wh: [3840, 2160]
+bezel: {x: 1800, y: 700, w: 220, h: 110}
+fields:
+  litres: {digits: 4, decimals: 2}

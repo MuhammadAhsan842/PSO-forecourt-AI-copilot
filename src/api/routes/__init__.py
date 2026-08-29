@@ -1,5 +1,5 @@
 """FastAPI routers, one file per concern."""
 
-from . import events, feedback, snapshots, stats, system
+from . import admin, events, feedback, meter, nvr, snapshots, stats, system
 
-__all__ = ["events", "feedback", "snapshots", "stats", "system"]
+__all__ = ["admin", "events", "feedback", "meter", "nvr", "snapshots", "stats", "system"]

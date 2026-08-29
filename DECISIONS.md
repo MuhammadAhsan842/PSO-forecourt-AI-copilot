@@ -17,3 +17,21 @@ Token-discipline index. New Phase work does not silently overturn these.
 5. **Camera-observed ≠ billed.** POS/pump remains source of truth when it exists. Every number later in the pipeline carries confidence + provenance.
 
 6. **Core freeze.** Ingest reconnect, event engine, YOLO/tracker, dashboard shell are not refactored for the meter path. New code lives under `src/meter/` + `scripts/meter_optics_proof.py` + `config/meter/`.
+
+## Phases 1–7 (2026-08-28)
+
+7. **Optics gate still blocks the estimator.** Software now exists for capture→OCR→fusion→Kalman→lifecycle, but a FAIL crop (`pass_px` false) emits `meter_optics_fail`, sets provenance `optics-blocked`, and will not publish `litres_est`. Simulate-fill turns the gate off only because the synthetic renderer is not 600×300.
+
+8. **CNN slot.** `TemplateDigitCnn` is a 12-class nearest-neighbour stand-in (0–9, blank, transitioning) on the existing `render_seven_seg` templates. A trained torch model belongs in `models/meter_7seg/` behind the same `classify_cell` interface.
+
+9. **No invented L/min.** `PumpConfig.max_lpm` is null on this site. The Kalman clamp is unused until you set it in `config/meter/pumps.yaml`.
+
+10. **Additive EventKinds:** `meter_optics_fail`, `meter_fill_start`, `meter_fill_t0`, `meter_fill_stop`, `meter_fill_final`, `meter_needs_review`, `meter_health`. Payload always includes `schema_version`.
+
+11. **POS.** `NullPosAdapter` until a feed exists. Matching tickets flip provenance to `pos-confirmed`. Dashboard never shows a bare number and never marks camera litres as billed.
+
+12. **Live loop is opt-in.** `python -m scripts.meter_run` — the API does not open RTSP on boot. JPEG poll stays the dashboard live path.
+
+13. **Fill contract v2.** Final events carry `T0`, `T_final`, `amount = T_final − T0`, `flags`, `frames_ref`, `schema_version=2`. Anomalies (`meter_unbilled`, `meter_no_vehicle`, `meter_pos_mismatch`) are additive EventKinds. Carry/transition flags are informational; they do not force review.
+
+14. **T0 is the last idle reading**, not the first incrementing frame. Dashboard headline after `final` is `T_final`, not the Kalman mid-fill estimate.

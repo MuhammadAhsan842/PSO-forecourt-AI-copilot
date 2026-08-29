@@ -1,7 +1,26 @@
-import type { CameraStatus, EventKind, EventRecord, Summary, WsMessage } from "./types";
+import type {
+  CameraStatus,
+  EventKind,
+  EventRecord,
+  MeterHealth,
+  MeterReading,
+  MeterTick,
+  Summary,
+  WsMessage,
+} from "./types";
 
-const RAW_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:8080";
-export const API_BASE = RAW_BASE.replace(/\/$/, "");
+function defaultApiBase(): string {
+  const fromEnv = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "");
+  if (fromEnv) return fromEnv;
+  // Match the page hostname so 127.0.0.1:5173 talks to 127.0.0.1:8080, not
+  // localhost (which often resolves to IPv6 ::1 while uvicorn is IPv4-only).
+  if (typeof window !== "undefined") {
+    return `http://${window.location.hostname}:8080`;
+  }
+  return "http://127.0.0.1:8080";
+}
+
+export const API_BASE = defaultApiBase();
 export const WS_BASE = API_BASE.replace(/^http/i, "ws");
 
 export async function fetchEvents(params: {
@@ -67,6 +86,48 @@ export async function fetchNvrChannels(): Promise<NvrManifest> {
 
 export function nvrStillUrl(fileName: string): string {
   return `${API_BASE}/nvr-stills/${fileName}`;
+}
+
+export async function fetchMeterHealth(): Promise<MeterHealth> {
+  const r = await fetch(`${API_BASE}/api/v1/meter/health`);
+  if (!r.ok) throw new Error(`GET /meter/health ${r.status}`);
+  return r.json();
+}
+
+export async function fetchMeterLive(): Promise<{ pumps: MeterTick[] } | MeterTick> {
+  const r = await fetch(`${API_BASE}/api/v1/meter/live`);
+  if (!r.ok) throw new Error(`GET /meter/live ${r.status}`);
+  return r.json();
+}
+
+export async function fetchMeterReadings(limit = 20): Promise<MeterReading[]> {
+  const r = await fetch(`${API_BASE}/api/v1/meter/readings?limit=${limit}`);
+  if (!r.ok) throw new Error(`GET /meter/readings ${r.status}`);
+  return r.json();
+}
+
+export async function fetchMeterReview(limit = 40): Promise<EventRecord[]> {
+  const r = await fetch(`${API_BASE}/api/v1/meter/review?limit=${limit}`);
+  if (!r.ok) throw new Error(`GET /meter/review ${r.status}`);
+  return r.json();
+}
+
+export async function simulateMeterFill(): Promise<{ ticks: MeterTick[]; events: EventRecord[] }> {
+  const r = await fetch(`${API_BASE}/api/v1/meter/simulate-fill`, { method: "POST" });
+  if (!r.ok) throw new Error(`POST /meter/simulate-fill ${r.status}`);
+  return r.json();
+}
+
+export async function saveMeterRoi(
+  pumpId: string,
+  box: { x: number; y: number; w: number; h: number }
+): Promise<void> {
+  const r = await fetch(`${API_BASE}/api/v1/meter/roi/${pumpId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(box),
+  });
+  if (!r.ok) throw new Error(`PUT /meter/roi ${r.status}`);
 }
 
 export function openEventStream(onMessage: (msg: WsMessage) => void, onStatus: (open: boolean) => void): () => void {

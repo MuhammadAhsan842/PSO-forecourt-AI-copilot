@@ -1,0 +1,35 @@
+# Meter pumps — topology only. Credentials stay in .env (CAM_PUMP_A_*).
+# max_lpm is unknown on this site; leave null. Do not invent a PSO flow rate.
+
+pumps:
+  - id: m1
+    label: "M1 / Pump 1"
+    enabled: true
+    camera_id: pump_a
+    nvr_channel: 9
+    is_ptz: false
+    max_lpm: null
+    settle_seconds: 2.0
+    roi_version: 1
+    frame_wh: [3840, 2160]
+    bezel: {x: 1800, y: 700, w: 220, h: 110}
+    fields:
+      litres: {digits: 4, decimals: 2}
+      # amount/rate LCD is dark when idle — fill in after a live-fill survey
+      amount: {digits: 6, decimals: 2}
+      rate: {digits: 4, decimals: 2}
+
+  - id: m1_ptz
+    label: "M1 via ch10 PTZ (unproven)"
+    enabled: false
+    camera_id: pump_a
+    nvr_channel: 10
+    is_ptz: true
+    preset_index: 2
+    max_lpm: null
+    settle_seconds: 2.0
+    roi_version: 1
+    frame_wh: [3840, 2160]
+    bezel: {x: 1600, y: 900, w: 400, h: 250}
+    fields:
+      litres: {digits: 4, decimals: 2}

@@ -30,6 +30,16 @@ class EventKind(str, Enum):
     SALE_RECORDED = "sale_recorded"
     CAMERA_OFFLINE = "camera_offline"
     CAMERA_ONLINE = "camera_online"
+    METER_OPTICS_FAIL = "meter_optics_fail"
+    METER_FILL_START = "meter_fill_start"
+    METER_FILL_T0 = "meter_fill_t0"
+    METER_FILL_STOP = "meter_fill_stop"
+    METER_FILL_FINAL = "meter_fill_final"
+    METER_NEEDS_REVIEW = "meter_needs_review"
+    METER_HEALTH = "meter_health"
+    METER_POS_MISMATCH = "meter_pos_mismatch"
+    METER_UNBILLED = "meter_unbilled"
+    METER_NO_VEHICLE = "meter_no_vehicle"
 
 
 class Point(BaseModel):

@@ -1,6 +1,6 @@
 # Meter-reading pipeline — architecture map
 
-**Status:** Phase map only. No reader engine until **Phase 0 PASS** on at least the pilot pump.  
+**Status:** Phases 0–7 implemented as a plug-in. Live ch9 M1 crop is still expected **optics FAIL**; the estimator will not publish litres until a PASS crop exists. Use **Simulate fill** on the dashboard or `POST /api/v1/meter/simulate-fill` to exercise the software path.  
 **Design source:** Cursor spec (2026-08-28) plus on-site notes from 2026-08-26.  
 **Missing file:** `PSO_Meter_Reading_Pipeline.md` is **not in this repo**. This map treats the pasted Cursor spec as the design rationale until that file is added.
 
@@ -202,4 +202,6 @@ python -m scripts.meter_optics_proof --channel 10 --preset-index 2 --settle 6 --
 
 Host/user/password default from `.env` (`CAM_PUMP_A_*`). Override with `--host --user --password`. Exit 8 = pixel-gate FAIL (frames still written). Fill `docs/METER-SITE-SURVEY.md` and set `human_readable_during_fill` in the JSON after you watch the fill.
 
-**Stop here.** Reply **PASS** or **FAIL** for the pilot pump. FAIL + ch10 cannot see M1 → dedicated meter camera, not a reader on 220×110.
+**Stop here for hardware.** Reply **PASS** or **FAIL** for the pilot pump after a live fill. FAIL + ch10 cannot see M1 → dedicated meter camera, not a reader on 220×110.
+
+Software phases 1–7 are in-tree (`src/meter/`, `GET /api/v1/meter/health`, dashboard Meter panel). They refuse to treat an optics-FAIL crop as a billed reading.

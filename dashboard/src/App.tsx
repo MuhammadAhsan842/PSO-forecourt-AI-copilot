@@ -8,6 +8,9 @@ import { EventLog } from "./components/EventLog";
 import { EventFilters } from "./components/EventFilters";
 import { Header } from "./components/Header";
 import { NvrGrid } from "./components/NvrGrid";
+import { CinemaStage } from "./components/CinemaStage";
+import { MeterPanel } from "./components/MeterPanel";
+import { FlagQueue } from "./components/FlagQueue";
 
 const REFRESH_MS = 15000;
 
@@ -71,8 +74,11 @@ export default function App() {
   };
 
   return (
-    <div className="mx-auto flex min-h-full max-w-[1400px] flex-col gap-6 px-6 py-6">
+    <div className="mx-auto flex min-h-full max-w-[1760px] flex-col gap-6 px-4 py-5 lg:px-6">
       <Header live={live} />
+      <CinemaStage />
+      <MeterPanel />
+      <FlagQueue />
       <StatCards summary={summary} />
       <CameraHealthBar cameras={cameras} />
       <NvrGrid />

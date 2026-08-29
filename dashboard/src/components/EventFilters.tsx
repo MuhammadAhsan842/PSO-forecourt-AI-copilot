@@ -10,6 +10,16 @@ const KINDS: EventKind[] = [
   "sale_recorded",
   "camera_offline",
   "camera_online",
+  "meter_optics_fail",
+  "meter_fill_start",
+  "meter_fill_t0",
+  "meter_fill_stop",
+  "meter_fill_final",
+  "meter_needs_review",
+  "meter_health",
+  "meter_pos_mismatch",
+  "meter_unbilled",
+  "meter_no_vehicle",
 ];
 
 interface Props {

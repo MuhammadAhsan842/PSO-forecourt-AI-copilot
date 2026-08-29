@@ -175,6 +175,73 @@ async def purge_rows_older_than(session: DBSession, cutoff: datetime) -> dict[st
     return removed
 
 
+async def create_reading(
+    session: DBSession,
+    *,
+    camera_id: str,
+    kind: str = "meter",
+    value: str,
+    confidence: float = 0.0,
+    track_id: int | None = None,
+    event_id: str | None = None,
+    payload: dict[str, Any] | None = None,
+    ts: datetime | None = None,
+) -> dict[str, Any]:
+    row = ReadingRow(
+        camera_id=camera_id,
+        kind=kind,
+        track_id=track_id,
+        event_id=event_id,
+        value=value,
+        confidence=confidence,
+        payload=payload or {},
+        ts=ts or datetime.utcnow(),
+    )
+    session.add(row)
+    await session.commit()
+    await session.refresh(row)
+    return {
+        "id": row.id,
+        "camera_id": row.camera_id,
+        "kind": row.kind,
+        "value": row.value,
+        "confidence": row.confidence,
+        "track_id": row.track_id,
+        "event_id": row.event_id,
+        "ts": row.ts.isoformat() + "Z",
+        "payload": row.payload or {},
+    }
+
+
+async def list_readings(
+    session: DBSession,
+    *,
+    camera_id: str | None = None,
+    kind: str | None = "meter",
+    limit: int = 50,
+) -> list[dict[str, Any]]:
+    stmt = select(ReadingRow).order_by(ReadingRow.ts.desc()).limit(limit)
+    if camera_id:
+        stmt = stmt.where(ReadingRow.camera_id == camera_id)
+    if kind:
+        stmt = stmt.where(ReadingRow.kind == kind)
+    rows = (await session.execute(stmt)).scalars().all()
+    return [
+        {
+            "id": r.id,
+            "camera_id": r.camera_id,
+            "kind": r.kind,
+            "value": r.value,
+            "confidence": r.confidence,
+            "track_id": r.track_id,
+            "event_id": r.event_id,
+            "ts": r.ts.isoformat() + "Z",
+            "payload": r.payload or {},
+        }
+        for r in rows
+    ]
+
+
 async def camera_status(session: DBSession) -> list[dict[str, Any]]:
     rows = (await session.execute(select(CameraHealthRow))).scalars().all()
     return [

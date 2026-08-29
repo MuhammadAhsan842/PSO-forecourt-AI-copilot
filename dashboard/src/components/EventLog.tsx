@@ -16,6 +16,16 @@ const KIND_COLORS: Record<string, string> = {
   sale_recorded: "bg-emerald-950/50 border-emerald-800 text-emerald-200",
   camera_offline: "bg-slate-800/60 border-slate-600 text-slate-200",
   camera_online: "bg-slate-800/60 border-slate-600 text-slate-300",
+  meter_optics_fail: "bg-amber-950/50 border-amber-800 text-amber-200",
+  meter_fill_start: "bg-emerald-950/50 border-emerald-800 text-emerald-200",
+  meter_fill_t0: "bg-emerald-950/50 border-emerald-800 text-emerald-200",
+  meter_fill_stop: "bg-sky-950/50 border-sky-800 text-sky-200",
+  meter_fill_final: "bg-emerald-950/50 border-emerald-800 text-emerald-200",
+  meter_needs_review: "bg-amber-950/50 border-amber-800 text-amber-200",
+  meter_health: "bg-slate-800/60 border-slate-600 text-slate-200",
+  meter_pos_mismatch: "bg-red-950/50 border-red-800 text-red-200",
+  meter_unbilled: "bg-red-950/50 border-red-800 text-red-200",
+  meter_no_vehicle: "bg-amber-950/50 border-amber-800 text-amber-200",
 };
 
 function tag(kind: string) {

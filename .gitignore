@@ -23,6 +23,7 @@ data/baseline/
 data/reports/
 data/nvr_scan/
 data/meter_optics/
+data/audit/
 *.db
 *.db-journal
 *.db-shm

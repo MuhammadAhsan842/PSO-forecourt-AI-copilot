@@ -1,0 +1,14 @@
+# Acceptance thresholds — report against these; do not bury mid-fill digit error
+# inside a blended average. Real fills are the hold-out; synthetic is bootstrap only.
+
+headline:
+  final_total_accuracy_min: 0.85
+  flag_precision_min: 0.70
+  # mid-fill per-digit accuracy is expected lower; report separately, no gate yet
+
+unit_price_pkr_per_litre:
+  min: null
+  max: null
+
+# Numerical estimator guard only if a pump sets max_lpm. Site has not confirmed L/min.
+flow_duration_slack: 2.0
